@@ -17,6 +17,8 @@ class CoreOAuth {
 
   Future<String?> getIdToken() async => 'ID_TOKEN';
 
+  Future<String?> getRefreshToken() async => 'REFRESH_TOKEN';
+
   factory CoreOAuth.fromConfig(Config config) =>
       config.isStub ? CoreOAuth() : getOAuthConfig(config);
 }

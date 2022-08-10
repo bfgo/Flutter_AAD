@@ -42,6 +42,11 @@ class MobileOAuth extends CoreOAuth {
 
   /// Retrieve cached OAuth Id Token.
   @override
+  Future<String?> getRefreshToken() async =>
+      (await _authStorage.loadTokenFromCache()).refreshToken;
+
+  /// Retrieve cached OAuth Id Token.
+  @override
   Future<String?> getIdToken() async =>
       (await _authStorage.loadTokenFromCache()).idToken;
 
