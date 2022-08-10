@@ -11,7 +11,7 @@ class Config {
   final String authorizationUrl;
 
   /// Azure AD token URL.
-  final String tokenUrl;
+  String tokenUrl;
 
   /// The tenant value in the path of the request can be used to control who can sign into the application.
   /// The allowed values are common, organizations, consumers, and tenant identifiers. Or Name of your Azure AD B2C tenant.
@@ -20,6 +20,9 @@ class Config {
   /// __AAD B2C only__: The user flow to be run. Specify the name of a user flow you've created in your Azure AD B2C tenant.
   /// For example: b2c_1_sign_in, b2c_1_sign_up, or b2c_1_edit_profile
   final String? policy;
+
+  /// List of other possible flows that the user can use
+  final List<String> otherPolicies;
 
   /// The Application (client) ID that the Azure portal – App registrations experience assigned to your app.
   final String clientId;
@@ -121,6 +124,7 @@ class Config {
   Config({
     required this.tenant,
     this.policy,
+    this.otherPolicies = const <String>[],
     required this.clientId,
     this.responseType = 'code',
     required this.redirectUri,
@@ -149,4 +153,11 @@ class Config {
             ? 'https://$tenant.b2clogin.com/$tenant.onmicrosoft.com/$policy/oauth2/v2.0/token'
             : 'https://login.microsoftonline.com/$tenant/oauth2/v2.0/token',
         aOptions = aOptions ?? AndroidOptions(encryptedSharedPreferences: true);
+
+  void updatePolicyTokenUrl(String newPolicy) {
+    if (isB2C) {
+      tokenUrl =
+          'https://$tenant.b2clogin.com/$tenant.onmicrosoft.com/$newPolicy/oauth2/v2.0/token';
+    }
+  }
 }

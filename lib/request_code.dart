@@ -23,18 +23,28 @@ class RequestCode {
       navigationDelegate: _navigationDelegate,
     );
     await _config.navigatorKey.currentState!.push(MaterialPageRoute(
-        builder: (context) => Scaffold(
-              body: SafeArea(child: webView),
-            )));
+      builder: (_) => Scaffold(body: SafeArea(child: webView)),
+    ));
     return _code;
   }
 
   FutureOr<NavigationDecision> _navigationDelegate(NavigationRequest request) {
     var uri = Uri.parse(request.url);
 
-    if (uri.queryParameters['error'] != null) {
-      _config.navigatorKey.currentState!.pop();
-    }
+      if (_config.otherPolicies.isNotEmpty && _config.isB2C) {
+        for (var policy in _config.otherPolicies) {
+          if (uri.pathSegments.contains('authorize')) {
+            if (uri.pathSegments.contains(policy)) {
+              _config.updatePolicyTokenUrl(policy);
+              break;
+            }
+          }
+        }
+      }
+
+      if (uri.queryParameters['error'] != null) {
+        _config.navigatorKey.currentState!.pop();
+      }
 
     if (uri.queryParameters['code'] != null) {
       _code = uri.queryParameters['code'];
