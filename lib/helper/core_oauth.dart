@@ -19,6 +19,6 @@ class CoreOAuth {
 
   Future<String?> getRefreshToken() async => 'REFRESH_TOKEN';
 
-  factory CoreOAuth.fromConfig(Config config) =>
+  factory CoreOAuth.fromConfig(NavigatorConfig config) =>
       config.isStub ? CoreOAuth() : getOAuthConfig(config);
 }

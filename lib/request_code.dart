@@ -6,18 +6,19 @@ import 'model/config.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class RequestCode {
-  final Config _config;
+  final NavigatorConfig _config;
   final AuthorizationRequest _authorizationRequest;
 
   String? _code;
 
-  RequestCode(Config config)
+  RequestCode(NavigatorConfig config)
       : _config = config,
         _authorizationRequest = AuthorizationRequest(config);
   Future<String?> requestCode() async {
     _code = null;
     final urlParams = _constructUrlParams();
     var webView = WebView(
+      userAgent: _config.userAgent,
       initialUrl: '${_authorizationRequest.url}?$urlParams',
       javascriptMode: JavascriptMode.unrestricted,
       navigationDelegate: _navigationDelegate,
@@ -29,22 +30,12 @@ class RequestCode {
   }
 
   FutureOr<NavigationDecision> _navigationDelegate(NavigationRequest request) {
-    var uri = Uri.parse(request.url);
+    final uri = Uri.parse(request.url);
+    _config.updatePolicyTokenUrl(uri);
 
-      if (_config.otherPolicies.isNotEmpty && _config.isB2C) {
-        for (var policy in _config.otherPolicies) {
-          if (uri.pathSegments.contains('authorize')) {
-            if (uri.pathSegments.contains(policy)) {
-              _config.updatePolicyTokenUrl(policy);
-              break;
-            }
-          }
-        }
-      }
-
-      if (uri.queryParameters['error'] != null) {
-        _config.navigatorKey.currentState!.pop();
-      }
+    if (uri.queryParameters['error'] != null) {
+      _config.navigatorKey.currentState!.pop();
+    }
 
     if (uri.queryParameters['code'] != null) {
       _code = uri.queryParameters['code'];

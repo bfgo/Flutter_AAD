@@ -14,7 +14,7 @@ class MobileOAuth extends CoreOAuth {
 
   /// Instantiating MobileAadOAuth authentication.
   /// [config] Parameters according to official Microsoft Documentation.
-  MobileOAuth(Config config)
+  MobileOAuth(NavigatorConfig config)
       : _authStorage = AuthStorage(
           tokenIdentifier: config.tokenIdentifier,
           aOptions: config.aOptions,
@@ -104,4 +104,4 @@ class MobileOAuth extends CoreOAuth {
   }
 }
 
-CoreOAuth getOAuthConfig(Config config) => MobileOAuth(config);
+CoreOAuth getOAuthConfig(NavigatorConfig config) => MobileOAuth(config);

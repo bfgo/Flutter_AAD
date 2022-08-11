@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -8,10 +10,14 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 /// DartDocs of parameters are mostly from those pages.
 class Config {
   /// Azure AD authorization URL.
-  final String authorizationUrl;
+  String get authorizationUrl => isB2C
+      ? 'https://$tenant.b2clogin.com/$tenant.onmicrosoft.com/$policy/oauth2/v2.0/authorize'
+      : 'https://login.microsoftonline.com/$tenant/oauth2/v2.0/authorize';
 
   /// Azure AD token URL.
-  String tokenUrl;
+  String get tokenUrl => isB2C
+      ? 'https://$tenant.b2clogin.com/$tenant.onmicrosoft.com/$policy/oauth2/v2.0/token'
+      : 'https://login.microsoftonline.com/$tenant/oauth2/v2.0/token';
 
   /// The tenant value in the path of the request can be used to control who can sign into the application.
   /// The allowed values are common, organizations, consumers, and tenant identifiers. Or Name of your Azure AD B2C tenant.
@@ -19,10 +25,15 @@ class Config {
 
   /// __AAD B2C only__: The user flow to be run. Specify the name of a user flow you've created in your Azure AD B2C tenant.
   /// For example: b2c_1_sign_in, b2c_1_sign_up, or b2c_1_edit_profile
-  final String? policy;
+  String? _policy;
 
-  /// List of other possible flows that the user can use
-  final List<String> otherPolicies;
+  String? get policy => _policy;
+
+  /// Set of other possible flows that the user can use
+  final Set<String> _otherPolicies;
+
+  /// Set of other possible flows that the user can use
+  late final Set<String> otherPolicies = UnmodifiableSetView(_otherPolicies);
 
   /// The Application (client) ID that the Azure portal – App registrations experience assigned to your app.
   final String clientId;
@@ -111,9 +122,6 @@ class Config {
   /// Flag whether to use a stub implementation for unit testing or not
   bool isStub;
 
-  /// Navigator key used to navigate to the login webview if interactive login is required
-  GlobalKey<NavigatorState> navigatorKey;
-
   /// User agent of web view. (using flutter_webview_plugin)
   String? userAgent;
 
@@ -123,8 +131,8 @@ class Config {
   /// Azure AD OAuth Configuration. Look at individual fields for description.
   Config({
     required this.tenant,
-    this.policy,
-    this.otherPolicies = const <String>[],
+    String? policy,
+    Set<String> otherPolicies = const <String>{},
     required this.clientId,
     this.responseType = 'code',
     required this.redirectUri,
@@ -144,20 +152,76 @@ class Config {
     this.codeVerifier,
     this.userAgent,
     this.isStub = false,
-    AndroidOptions? aOptions,
-    required this.navigatorKey,
-  })  : authorizationUrl = isB2C
-            ? 'https://$tenant.b2clogin.com/$tenant.onmicrosoft.com/$policy/oauth2/v2.0/authorize'
-            : 'https://login.microsoftonline.com/$tenant/oauth2/v2.0/authorize',
-        tokenUrl = isB2C
-            ? 'https://$tenant.b2clogin.com/$tenant.onmicrosoft.com/$policy/oauth2/v2.0/token'
-            : 'https://login.microsoftonline.com/$tenant/oauth2/v2.0/token',
-        aOptions = aOptions ?? AndroidOptions(encryptedSharedPreferences: true);
+    this.aOptions = const AndroidOptions(encryptedSharedPreferences: true),
+  })  : assert(isB2C ? policy != null : true),
+        _policy = policy,
+        _otherPolicies = otherPolicies;
 
-  void updatePolicyTokenUrl(String newPolicy) {
-    if (isB2C) {
-      tokenUrl =
-          'https://$tenant.b2clogin.com/$tenant.onmicrosoft.com/$newPolicy/oauth2/v2.0/token';
+  void updatePolicyTokenUrl(Uri uri) {
+    if (otherPolicies.isNotEmpty && isB2C) {
+      final segments = uri.pathSegments;
+      for (final policy in otherPolicies) {
+        if (segments.contains('authorize') && segments.contains(policy)) {
+          _policy = policy;
+          break;
+        }
+      }
     }
   }
+}
+
+class NavigatorConfig extends Config {
+  /// Navigator key used to navigate to the login webview if interactive login is required
+  final GlobalKey<NavigatorState> navigatorKey;
+
+  NavigatorConfig({
+    required String tenant,
+    required String redirectUri,
+    required String scope,
+    required this.navigatorKey,
+    required String clientId,
+    Set<String> otherPolicies = const <String>{},
+    String? policy,
+    String responseType = 'code',
+    String? responseMode,
+    String? state,
+    String? prompt,
+    String? codeChallenge,
+    String? codeChallengeMethod,
+    String nonce = '12345',
+    String tokenIdentifier = 'Token',
+    String? clientSecret,
+    String? resource,
+    bool isB2C = false,
+    String? loginHint,
+    String? domainHint,
+    String? codeVerifier,
+    String? userAgent,
+    bool isStub = false,
+    AndroidOptions aOptions = const AndroidOptions(encryptedSharedPreferences: true),
+  }) : super(
+          clientId: clientId,
+          redirectUri: redirectUri,
+          scope: scope,
+          tenant: tenant,
+          aOptions: aOptions,
+          clientSecret: clientSecret,
+          isB2C: isB2C,
+          loginHint: loginHint,
+          domainHint: domainHint,
+          codeVerifier: codeVerifier,
+          userAgent: userAgent,
+          isStub: isStub,
+          codeChallenge: codeChallenge,
+          codeChallengeMethod: codeChallengeMethod,
+          nonce: nonce,
+          otherPolicies: otherPolicies,
+          policy: policy,
+          prompt: prompt,
+          resource: resource,
+          responseMode: responseMode,
+          responseType: responseType,
+          state: state,
+          tokenIdentifier: tokenIdentifier,
+        );
 }

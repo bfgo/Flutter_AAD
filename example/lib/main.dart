@@ -34,7 +34,7 @@ class _MyHomePageState extends State<MyHomePage> {
   // the port listed below. In VSCode, this can be done with
   // the following run settings in launch.json
   // "args": ["-d", "chrome","--web-port", "8483"]
-  static final Config config = Config(
+  static final NavigatorConfig config = NavigatorConfig(
     tenant: 'YOUR_TENANT_ID',
     clientId: 'YOUR_CLIENT_ID',
     scope: 'openid profile offline_access',

@@ -10,7 +10,7 @@ import 'dart:async';
 class AadOAuth {
   final CoreOAuth _coreOAuth;
 
-  AadOAuth(Config config) : _coreOAuth = CoreOAuth.fromConfig(config);
+  AadOAuth(NavigatorConfig config) : _coreOAuth = CoreOAuth.fromConfig(config);
 
   /// Perform Azure AD login.
   ///

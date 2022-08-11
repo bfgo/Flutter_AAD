@@ -45,7 +45,7 @@ class _MyHomePageState extends State<MyHomePage> {
   // the following run settings in launch.json
   // "args": ["-d", "chrome","--web-port", "8483"]
 
-  static final Config configB2Ca = Config(
+  static final NavigatorConfig configB2Ca = NavigatorConfig(
       tenant: 'YOUR_TENANT_NAME',
       clientId: 'YOUR_CLIENT_ID',
       scope: 'YOUR_CLIENT_ID offline_access',
@@ -58,7 +58,7 @@ class _MyHomePageState extends State<MyHomePage> {
       policy: 'YOUR_USER_FLOW___USER_FLOW_A',
       tokenIdentifier: 'UNIQUE IDENTIFIER A');
 
-  static final Config configB2Cb = Config(
+  static final NavigatorConfig configB2Cb = NavigatorConfig(
       tenant: 'YOUR_TENANT_NAME',
       clientId: 'YOUR_CLIENT_ID',
       scope: 'YOUR_CLIENT_ID offline_access',
