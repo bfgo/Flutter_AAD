@@ -77,6 +77,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   final AadOAuth oauthB2Ca = AadOAuth(configB2Ca);
   final AadOAuth oauthB2Cb = AadOAuth(configB2Cb);
+  final AadOAuth oauthB2Cc = AadOAuth.native(configB2Cb);
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +89,8 @@ class _MyHomePageState extends State<MyHomePage> {
             onTokenCreated: (future) async {
               try {
                 final token = await future;
-                showMessage('Logged in successfully, your access token: $token');
+                showMessage(
+                    'Logged in successfully, your access token: $token');
               } catch (e) {
                 showError(e);
               }
@@ -165,6 +167,13 @@ class _MyHomePageState extends State<MyHomePage> {
             title: Text('Login'),
             onTap: () {
               setState(() => WebView = true);
+            },
+          ),
+          ListTile(
+            leading: Icon(Icons.exit_to_app),
+            title: Text('Logout'),
+            onTap: () {
+              logout(oauthB2Cc);
             },
           ),
         ],

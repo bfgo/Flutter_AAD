@@ -7,19 +7,64 @@ import '../request_code.dart';
 import '../request_token.dart';
 import 'auth_storage.dart';
 
-class MobileOAuth extends CoreOAuth {
-  final AuthStorage _authStorage;
+class MobileOAuth extends MobileOfflineOAuth {
   final RequestCode _requestCode;
+
+  /// Instantiating MobileAadOAuth authentication.
+  /// [config] Parameters according to official Microsoft Documentation.
+  MobileOAuth(NavigatorConfig config) : _requestCode = RequestCode(config),
+    super(config);
+
+  /// Authorize user via refresh token or web gui if necessary.
+  ///
+  /// Setting [refreshIfAvailable] to [true] will attempt to re-authenticate
+  /// with the existing refresh token, if any, even though the access token may
+  /// still be valid. If there's no refresh token the existing access token
+  /// will be returned, as long as we deem it still valid. In the event that
+  /// both access and refresh tokens are invalid, the web gui will be used.
+  @override
+  Future<Token> _authorization({bool refreshIfAvailable = false}) async {
+    var token = await _authStorage.loadTokenFromCache();
+
+    if (!refreshIfAvailable) {
+      if (token.hasValidAccessToken()) {
+        return token;
+      }
+    }
+
+    if (token.hasRefreshToken()) {
+      token = await _requestToken.requestRefreshToken(token.refreshToken!);
+    }
+
+    if (!token.hasValidAccessToken()) {
+      token = await _performFullAuthFlow();
+    }
+
+    await _authStorage.saveTokenToCache(token);
+    return token;
+  }
+
+  /// Authorize user via refresh token or web gui if necessary.
+  Future<Token> _performFullAuthFlow() async {
+    var code = await _requestCode.requestCode();
+    if (code == null) {
+      throw Exception('Access denied or authentication canceled.');
+    }
+    return await _requestToken.requestToken(code);
+  }
+}
+
+class MobileOfflineOAuth extends CoreOAuth {
+  final AuthStorage _authStorage;
   final RequestToken _requestToken;
 
   /// Instantiating MobileAadOAuth authentication.
   /// [config] Parameters according to official Microsoft Documentation.
-  MobileOAuth(NavigatorConfig config)
+  MobileOfflineOAuth(Config config)
       : _authStorage = AuthStorage(
           tokenIdentifier: config.tokenIdentifier,
           aOptions: config.aOptions,
         ),
-        _requestCode = RequestCode(config),
         _requestToken = RequestToken(config);
 
   /// Perform Azure AD login.
@@ -58,7 +103,6 @@ class MobileOAuth extends CoreOAuth {
   @override
   Future<void> logout() async {
     await _authStorage.clear();
-    await _requestCode.clearCookies();
   }
 
   /// Authorize user via refresh token or web gui if necessary.
@@ -82,20 +126,11 @@ class MobileOAuth extends CoreOAuth {
     }
 
     if (!token.hasValidAccessToken()) {
-      token = await _performFullAuthFlow();
+      throw Exception('No valid token');
     }
 
     await _authStorage.saveTokenToCache(token);
     return token;
-  }
-
-  /// Authorize user via refresh token or web gui if necessary.
-  Future<Token> _performFullAuthFlow() async {
-    var code = await _requestCode.requestCode();
-    if (code == null) {
-      throw Exception('Access denied or authentication canceled.');
-    }
-    return await _requestToken.requestToken(code);
   }
 
   Future<void> _removeOldTokenOnFirstLogin() async {
@@ -108,4 +143,6 @@ class MobileOAuth extends CoreOAuth {
   }
 }
 
-CoreOAuth getOAuthConfig(NavigatorConfig config) => MobileOAuth(config);
+CoreOAuth getOAuthConfig(Config config) => MobileOfflineOAuth(config);
+
+CoreOAuth getOAuthNavigatorConfig(NavigatorConfig config) => MobileOAuth(config);

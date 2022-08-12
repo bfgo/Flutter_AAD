@@ -8,7 +8,7 @@ import 'package:aad_oauth/model/config.dart';
 import 'package:aad_oauth/model/token.dart';
 
 class CoreOAuth {
-  CoreOAuth();
+  const CoreOAuth();
 
   Future<void> login({bool refreshIfAvailable = false}) async {}
 
@@ -22,6 +22,9 @@ class CoreOAuth {
 
   Future<String?> getRefreshToken() async => 'REFRESH_TOKEN';
 
-  factory CoreOAuth.fromConfig(NavigatorConfig config) =>
+  factory CoreOAuth.fromNavigatorConfig(NavigatorConfig config) =>
+      config.isStub ? CoreOAuth() : getOAuthNavigatorConfig(config);
+
+  factory CoreOAuth.fromConfig(Config config) =>
       config.isStub ? CoreOAuth() : getOAuthConfig(config);
 }

@@ -98,3 +98,5 @@ class WebOAuth extends CoreOAuth {
 }
 
 CoreOAuth getOAuthConfig(Config config) => WebOAuth(config);
+
+CoreOAuth getOAuthNavigatorConfig(NavigatorConfig config) => WebOAuth(config);
