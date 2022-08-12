@@ -5,6 +5,7 @@ import 'package:aad_oauth/helper/choose_oauth.dart'
     if (dart.library.html) 'package:aad_oauth/helper/web_oauth.dart';
 
 import 'package:aad_oauth/model/config.dart';
+import 'package:aad_oauth/model/token.dart';
 
 class CoreOAuth {
   CoreOAuth();
@@ -12,6 +13,8 @@ class CoreOAuth {
   Future<void> login({bool refreshIfAvailable = false}) async {}
 
   Future<void> logout() async {}
+
+  Future<Token?> getToken() async => null;
 
   Future<String?> getAccessToken() async => 'ACCESS_TOKEN';
 

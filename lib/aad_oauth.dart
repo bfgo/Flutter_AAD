@@ -23,6 +23,9 @@ class AadOAuth {
       _coreOAuth.login(refreshIfAvailable: refreshIfAvailable);
 
   /// Retrieve cached OAuth Access Token.
+  Future<String?> getToken() async => _coreOAuth.getAccessToken();
+
+  /// Retrieve cached OAuth Access Token.
   Future<String?> getAccessToken() async => _coreOAuth.getAccessToken();
 
   /// Retrieve cached OAuth Refresh Token.

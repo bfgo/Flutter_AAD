@@ -35,6 +35,10 @@ class MobileOAuth extends CoreOAuth {
     await _authorization(refreshIfAvailable: refreshIfAvailable);
   }
 
+  /// Retrieve cached OAuth Token Model.
+  @override
+  Future<Token?> getToken() async => await _authStorage.loadTokenFromCache();
+
   /// Retrieve cached OAuth Access Token.
   @override
   Future<String?> getAccessToken() async =>

@@ -13,6 +13,12 @@ class Token {
   /// Note: Only provided if offline_access `scope` was requested.
   String? refreshToken;
 
+  /// How long the access token is valid (in seconds).
+  int? expiresRefreshIn;
+
+  /// Predicted refresh token expiration time.
+  DateTime? expireRefreshTimeStamp;
+
   /// A JSON Web Token (JWT). The app can decode the segments of this token to request information about the user who signed in.
   /// The app can cache the values and display them, and confidential clients can use this for authorization.
   /// For more information about id_tokens, see the id_token reference.
@@ -58,6 +64,12 @@ class Token {
     if (model.expireTimeStamp != null) {
       ret['expire_timestamp'] = model.expireTimeStamp!.millisecondsSinceEpoch;
     }
+    if (model.expireRefreshTimeStamp != null) {
+      ret['expire_refreshToken_timestamp'] = model.expireRefreshTimeStamp!.millisecondsSinceEpoch;
+    }
+    if (model.expiresRefreshIn != null) {
+      ret['refresh_token_expires_in'] = model.expiresRefreshIn;
+    }
     if (model.idToken != null) {
       ret['id_token'] = model.idToken;
     }
@@ -75,7 +87,7 @@ class Token {
           map['error_description']);
     }
 
-    var model = Token();
+    final model = Token();
     model.accessToken = map['access_token'];
     model.tokenType = map['token_type'];
     model.expiresIn = map['expires_in'] is int
@@ -83,11 +95,24 @@ class Token {
         : int.tryParse(map['expires_in'].toString()) ?? 60;
     model.refreshToken = map['refresh_token'];
     model.idToken = map.containsKey('id_token') ? map['id_token'] : '';
+    if (model.refreshToken != null) {
+      model.expiresRefreshIn = map['refresh_token_expires_in'] is int
+          ? map['refresh_token_expires_in']
+          : int.tryParse(map['refresh_token_expires_in'].toString());
+    }
     model.issueTimeStamp = DateTime.now().toUtc();
     model.expireTimeStamp = map.containsKey('expire_timestamp')
         ? DateTime.fromMillisecondsSinceEpoch(map['expire_timestamp'])
         : model.issueTimeStamp
             .add(Duration(seconds: model.expiresIn! - model.expireOffSet));
+    if (model.refreshToken != null) {
+      model.expireRefreshTimeStamp = map.containsKey('expire_refreshToken_timestamp')
+        ? DateTime.fromMillisecondsSinceEpoch(map['expire_refreshToken_timestamp'])
+        : model.expiresRefreshIn != null
+          ? model.issueTimeStamp
+            .add(Duration(seconds: model.expiresRefreshIn! - model.expireOffSet))
+          : null;
+    }
 
     return model;
   }
