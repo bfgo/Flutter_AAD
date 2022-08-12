@@ -183,7 +183,7 @@ class _AadLoginWebviewState extends State<AadLoginWebview> {
       return widget.loader ?? const SizedBox();
     }
 
-    final Widget webview = WebView(
+    return WebView(
       key: ValueKey<String?>(initialUrl),
       onWebViewCreated: widget.onWebViewCreated,
       gestureNavigationEnabled: true,
@@ -191,16 +191,6 @@ class _AadLoginWebviewState extends State<AadLoginWebview> {
       initialUrl: initialUrl,
       javascriptMode: JavascriptMode.unrestricted,
       navigationDelegate: _navigationDelegate,
-    );
-
-    if (widget.loader == null) return webview;
-
-    return Stack(
-      fit: StackFit.passthrough,
-      children: [
-        Positioned.fill(child: webview),
-        if (isLoading) widget.loader!,
-      ],
     );
   }
 }
