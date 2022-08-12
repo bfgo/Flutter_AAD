@@ -107,7 +107,7 @@ class _AadLoginWebviewState extends State<AadLoginWebview> {
       _completer = Completer<Token>()..completeError(e);
       widget.onTokenCreated(_completer!.future);
     }
-    if (_completer == null) setState(() => performWebFlow = true);
+    if (mounted && _completer == null) setState(() => performWebFlow = true);
   }
 
   Future<void> _removeOldTokenOnFirstLogin() async {
