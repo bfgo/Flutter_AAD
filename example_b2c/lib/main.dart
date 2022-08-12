@@ -1,3 +1,4 @@
+import 'package:aad_oauth/aad_login_webview.dart';
 import 'package:aad_oauth/aad_oauth.dart';
 import 'package:aad_oauth/model/config.dart';
 import 'package:flutter/foundation.dart';
@@ -40,6 +41,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  bool WebView = false;
   // Must configure flutter to start the web server for the app on
   // the port listed below. In VSCode, this can be done with
   // the following run settings in launch.json
@@ -78,6 +80,30 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    if (WebView) {
+      return Scaffold(
+        body: SafeArea(
+          child: AadLoginWebview(
+            config: configB2Cb,
+            onTokenCreated: (future) async {
+              try {
+                final token = await future;
+                showMessage('Logged in successfully, your access token: $token');
+              } catch (e) {
+                showError(e);
+              }
+              setState(() => WebView = false);
+            },
+          ),
+        ),
+        floatingActionButton: FloatingActionButton(
+          autofocus: false,
+          onPressed: () => setState(() => WebView = false),
+          child: const Icon(Icons.close),
+        ),
+      );
+    }
+
     // adjust window size for browser login
 
     return Scaffold(
@@ -125,6 +151,20 @@ class _MyHomePageState extends State<MyHomePage> {
             title: Text('Logout'),
             onTap: () {
               logout(oauthB2Cb);
+            },
+          ),
+          Divider(),
+          ListTile(
+            title: Text(
+              'AzureAD WebView',
+              style: Theme.of(context).textTheme.headline5,
+            ),
+          ),
+          ListTile(
+            leading: Icon(Icons.launch),
+            title: Text('Login'),
+            onTap: () {
+              setState(() => WebView = true);
             },
           ),
         ],
