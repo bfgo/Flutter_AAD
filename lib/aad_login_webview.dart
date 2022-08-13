@@ -27,16 +27,27 @@ class AadLoginWebview extends StatefulWidget {
   /// If not provided it will use a SizedBox
   final Widget? loader;
 
+  /// A delegate function that decides how to handle navigation actions.
+  /// When a navigation is initiated by the WebView (e.g when a user clicks a link)
+  /// this delegate is called and has to decide how to proceed with the navigation.
+  ///
+  /// If the link contains an error or the correct code of the AadOAuth it will not call this delegate.
+  final NavigationDelegate navigationDelegate;
+
   final bool refreshIfAvailable;
 
   const AadLoginWebview({
     Key? key,
     required this.config,
     required this.onTokenCreated,
+    this.navigationDelegate = _delegate,
     this.onWebViewCreated,
     this.loader,
     this.refreshIfAvailable = false,
   }) : super(key: key);
+
+  static FutureOr<NavigationDecision> _delegate(NavigationRequest navigation) =>
+      NavigationDecision.navigate;
 
   @override
   State<AadLoginWebview> createState() => _AadLoginWebviewState();
@@ -46,7 +57,6 @@ class _AadLoginWebviewState extends State<AadLoginWebview> {
   late AuthStorage authStorage;
   Completer<Token>? _completer;
   String? initialUrl;
-  bool isLoading = false;
   bool performWebFlow = false;
 
   @override
@@ -87,11 +97,12 @@ class _AadLoginWebviewState extends State<AadLoginWebview> {
     }
 
     if (uri.queryParameters['code'] != null) {
-      isLoading = true;
       final code = uri.queryParameters['code'];
       _authorize(code);
+      return NavigationDecision.navigate;
     }
-    return NavigationDecision.navigate;
+
+    return widget.navigationDelegate(request);
   }
 
   Future<void> login(bool refreshIfAvailable) async {
@@ -165,7 +176,6 @@ class _AadLoginWebviewState extends State<AadLoginWebview> {
     _completer = null;
     _completer = Completer<Token>();
     try {
-      setState(() => isLoading = true);
       final requestToken = RequestToken(widget.config);
       final token = await requestToken.requestToken(code);
       await authStorage.saveTokenToCache(token);
@@ -174,7 +184,6 @@ class _AadLoginWebviewState extends State<AadLoginWebview> {
       _completer!.completeError(e);
     }
     widget.onTokenCreated(_completer!.future);
-    if (mounted) setState(() => isLoading = false);
   }
 
   @override
