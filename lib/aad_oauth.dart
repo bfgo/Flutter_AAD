@@ -2,6 +2,7 @@
 library aad_oauth;
 
 import 'package:aad_oauth/helper/core_oauth.dart';
+import 'package:aad_oauth/model/token.dart';
 
 import 'model/config.dart';
 import 'dart:async';
@@ -25,7 +26,7 @@ class AadOAuth {
       _coreOAuth.login(refreshIfAvailable: refreshIfAvailable);
 
   /// Retrieve cached OAuth Access Token.
-  Future<String?> getToken() async => _coreOAuth.getAccessToken();
+  Future<Token?> getToken() async => _coreOAuth.getToken();
 
   /// Retrieve cached OAuth Access Token.
   Future<String?> getAccessToken() async => _coreOAuth.getAccessToken();
