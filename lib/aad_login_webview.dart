@@ -89,9 +89,17 @@ class _AadLoginWebviewState extends State<AadLoginWebview> {
     widget.config.updatePolicyTokenUrl(uri);
 
     if (uri.queryParameters['error'] != null) {
+      final error = uri.queryParameters['error']!;
+      final description = uri.queryParameters['error_description'];
+      final String message;
+      if (description == null) {
+        message = error;
+      }
+      else {
+        message = '$error: $description';
+      }
       _completer = null;
-      _completer = Completer<Token>()
-        ..completeError(Exception(uri.queryParameters['error']));
+      _completer = Completer<Token>()..completeError(Exception(message));
       widget.onTokenCreated(_completer!.future);
       return NavigationDecision.navigate;
     }
