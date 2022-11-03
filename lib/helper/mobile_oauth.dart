@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:aad_oauth/helper/core_oauth.dart';
+import 'package:aad_oauth/helper/token_exception.dart';
 import 'package:aad_oauth/model/config.dart';
 import 'package:aad_oauth/model/token.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,8 +15,9 @@ class MobileOAuth extends MobileOfflineOAuth {
 
   /// Instantiating MobileAadOAuth authentication.
   /// [config] Parameters according to official Microsoft Documentation.
-  MobileOAuth(NavigatorConfig config) : _requestCode = RequestCode(config),
-    super(config);
+  MobileOAuth(NavigatorConfig config)
+      : _requestCode = RequestCode(config),
+        super(config);
 
   /// Authorize user via refresh token or web gui if necessary.
   ///
@@ -26,13 +30,9 @@ class MobileOAuth extends MobileOfflineOAuth {
   Future<Token> _authorization({bool refreshIfAvailable = false}) async {
     var token = await _authStorage.loadTokenFromCache();
 
-    if (!refreshIfAvailable) {
-      if (token.hasValidAccessToken()) {
-        return token;
-      }
-    }
-
-    if (token.hasRefreshToken()) {
+    if (!refreshIfAvailable && token.hasValidAccessToken()) {
+      return token;
+    } else if (refreshIfAvailable && token.hasRefreshToken()) {
       token = await _requestToken.requestRefreshToken(token.refreshToken!);
     }
 
@@ -77,7 +77,17 @@ class MobileOfflineOAuth extends CoreOAuth {
   @override
   Future<void> login({bool refreshIfAvailable = false}) async {
     await _removeOldTokenOnFirstLogin();
-    await _authorization(refreshIfAvailable: refreshIfAvailable);
+    try {
+      await _authorization(refreshIfAvailable: refreshIfAvailable);
+    } on SocketException {
+      rethrow;
+    } catch (e) {
+      /// Fix when token is already old and need to reenter credentials:
+      /// Error during token request: invalid_grant: AADB2C90080:
+      /// The provided grant has expired. Please re-authenticate and try again.
+      await logout();
+      rethrow;
+    }
   }
 
   /// Retrieve cached OAuth Token Model.
@@ -115,18 +125,14 @@ class MobileOfflineOAuth extends CoreOAuth {
   Future<Token> _authorization({bool refreshIfAvailable = false}) async {
     var token = await _authStorage.loadTokenFromCache();
 
-    if (!refreshIfAvailable) {
-      if (token.hasValidAccessToken()) {
-        return token;
-      }
-    }
-
-    if (token.hasRefreshToken()) {
+    if (!refreshIfAvailable && token.hasValidAccessToken()) {
+      return token;
+    } else if (refreshIfAvailable && token.hasRefreshToken()) {
       token = await _requestToken.requestRefreshToken(token.refreshToken!);
     }
 
     if (!token.hasValidAccessToken()) {
-      throw Exception('No valid token');
+      throw TokenException(token);
     }
 
     await _authStorage.saveTokenToCache(token);
@@ -145,4 +151,5 @@ class MobileOfflineOAuth extends CoreOAuth {
 
 CoreOAuth getOAuthConfig(Config config) => MobileOfflineOAuth(config);
 
-CoreOAuth getOAuthNavigatorConfig(NavigatorConfig config) => MobileOAuth(config);
+CoreOAuth getOAuthNavigatorConfig(NavigatorConfig config) =>
+    MobileOAuth(config);

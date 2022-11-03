@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:aad_oauth/model/config.dart';
 import 'package:aad_oauth/model/token.dart';
@@ -9,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import 'helper/auth_storage.dart';
+import 'helper/token_exception.dart';
 
 typedef AsyncTokenGetter = void Function(Future<Token> future);
 
@@ -55,6 +57,7 @@ class AadLoginWebview extends StatefulWidget {
 
 class _AadLoginWebviewState extends State<AadLoginWebview> {
   late AuthStorage authStorage;
+  final CookieManager cookieManager = CookieManager();
   Completer<Token>? _completer;
   String? initialUrl;
   bool performWebFlow = false;
@@ -91,15 +94,9 @@ class _AadLoginWebviewState extends State<AadLoginWebview> {
     if (uri.queryParameters['error'] != null) {
       final error = uri.queryParameters['error']!;
       final description = uri.queryParameters['error_description'];
-      final String message;
-      if (description == null) {
-        message = error;
-      }
-      else {
-        message = '$error: $description';
-      }
       _completer = null;
-      _completer = Completer<Token>()..completeError(Exception(message));
+      _completer = Completer<Token>()
+        ..completeError(TokenException.error(error, description));
       widget.onTokenCreated(_completer!.future);
       return NavigationDecision.navigate;
     }
@@ -123,8 +120,15 @@ class _AadLoginWebviewState extends State<AadLoginWebview> {
         widget.onTokenCreated(_completer!.future);
       }
     } catch (e) {
-      _completer = Completer<Token>()..completeError(e);
-      widget.onTokenCreated(_completer!.future);
+      if (e is SocketException) {
+        _completer = Completer<Token>()..completeError(e);
+        widget.onTokenCreated(_completer!.future);
+      } else {
+        /// Fix when token is already old and need to reenter credentials:
+        /// Error during token request: invalid_grant: AADB2C90080:
+        /// The provided grant has expired. Please re-authenticate and try again.
+        await logout();
+      }
     }
     if (mounted && _completer == null) setState(() => performWebFlow = true);
   }
@@ -140,19 +144,15 @@ class _AadLoginWebviewState extends State<AadLoginWebview> {
 
   Future<void> logout() async {
     await authStorage.clear();
-    await CookieManager().clearCookies();
+    await cookieManager.clearCookies();
   }
 
   Future<Token?> _authorization({bool refreshIfAvailable = false}) async {
     var token = await authStorage.loadTokenFromCache();
 
-    if (!refreshIfAvailable) {
-      if (token.hasValidAccessToken()) {
-        return token;
-      }
-    }
-
-    if (token.hasRefreshToken()) {
+    if (!refreshIfAvailable && token.hasValidAccessToken()) {
+      return token;
+    } else if (refreshIfAvailable && token.hasRefreshToken()) {
       final requestToken = RequestToken(widget.config);
       token = await requestToken.requestRefreshToken(token.refreshToken!);
     }

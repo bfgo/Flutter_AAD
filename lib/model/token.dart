@@ -1,3 +1,5 @@
+import 'package:aad_oauth/helper/token_exception.dart';
+
 /// Access token enabling to securely call protected APIs on behalf of the user.
 class Token {
   /// Offset which is subtracted from expire time
@@ -81,10 +83,7 @@ class Token {
     if (map == null) throw Exception('No token from received');
     //error handling as described in https://docs.microsoft.com/en-us/azure/active-directory/develop/v2-oauth2-auth-code-flow#error-response-1
     if (map['error'] != null) {
-      throw Exception('Error during token request: ' +
-          map['error'] +
-          ': ' +
-          map['error_description']);
+      throw TokenException.fromMap(map);
     }
 
     final model = Token();
